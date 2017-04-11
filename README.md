@@ -16,6 +16,7 @@
 - [根据经纬度显示地图](#根据经纬度显示地图)
 - [判断是否登陆](#判断是否登陆)
 - [去登陆](#去登陆)
+- [url跳转](#url跳转)
 - [登陆回调](#登陆回调)
 - [地理位置提交](#地理位置提交)
 - [分享](#分享)
@@ -240,6 +241,25 @@ let globalEvent = weex.requireModule('globalEvent');
 </script>
 ```
 
+# url跳转
+url跳转，需要传一个参数，参数为需要跳转的url地址
+
+```
+<!--html-->
+<template>
+    <div @click="call" class="phone"></div>
+</template>
+
+<!--js-->
+<script>
+    export default {
+        call (){
+            //   native操作
+            weex.requireModule('THAW').goUrl('需要跳转的url地址');
+        }
+    }
+</script>
+```
 
 # 登陆回调
 点击去登陆的时候监听用户登陆是否成功，如果成功返回用户的userId 返回JSON：{userId:''}
