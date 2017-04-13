@@ -17,6 +17,7 @@
 - [判断是否登陆](#判断是否登陆)
 - [去登陆](#去登陆)
 - [url跳转](#url跳转)
+- [webView标题](#webView标题)
 - [登陆回调](#登陆回调)
 - [地理位置提交](#地理位置提交)
 - [分享](#分享)
@@ -260,6 +261,24 @@ url跳转，需要传一个参数，参数为需要跳转的url地址
     }
 </script>
 ```
+
+# webView标题
+在m站中发送标题名称 app需要在头部使用该标题
+
+```
+<!--html-->
+<body>
+    
+</body>
+
+<!--js-->
+<script>
+    document.addEventListener('WebViewJavascriptBridgeReady', function(){
+         WebViewJavascriptBridge.callHandler('onChangeWebTitle',{"changeWebTitle":'标题名称'});
+    });
+</script>
+```
+
 
 # 登陆回调
 点击去登陆的时候监听用户登陆是否成功，如果成功返回用户的userId 返回JSON：{userId:''}
