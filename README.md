@@ -279,7 +279,6 @@ url跳转，需要传一个参数，参数为需要跳转的url地址
 </script>
 ```
 
-
 # 登陆回调
 点击去登陆的时候监听用户登陆是否成功，如果成功返回用户的userId 返回JSON：{userId:''}
 
@@ -326,7 +325,6 @@ let globalEvent = weex.requireModule('globalEvent');
 </script>
 ```
 
-
 # 分享
 
 ```
@@ -350,7 +348,6 @@ let globalEvent = weex.requireModule('globalEvent');
     }
 </script>
 ```
-
 
 # 显示正在加载弹层
     接受一个string参数，正在加载的文案显示为所传的参数
