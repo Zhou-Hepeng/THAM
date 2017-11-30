@@ -7,25 +7,66 @@
 >     THAW 模块名 （truckhome and weex）在此模块下进行扩展和补充。
 ---
 
+- [App传值](#App传值)
 - [返回按钮](#返回按钮)
 - [主动获取客户端信息](#主动获取客户端信息)
 - [拨打电话](#拨打电话)
 - [拍照或从手机相册中选图接口](#拍照或从手机相册中选图接口)
 - [监听上传图片回调](#监听上传图片回调)
 - [获取经纬度](#获取经纬度)
+- [监听定位成功或者失败](#监听定位成功或者失败)
 - [根据经纬度显示地图](#根据经纬度显示地图)
-- [判断是否登陆](#判断是否登陆)
 - [去登陆](#去登陆)
 - [url跳转](#url跳转)
 - [webView标题](#webView标题)
 - [登陆回调](#登陆回调)
 - [地理位置提交](#地理位置提交)
 - [分享](#分享)
+- [分享状态回调](#分享状态回调)
+- [分享到具体平台](#分享到具体平台)
 - [显示正在加载弹层](#显示正在加载弹层)
 - [隐藏正在加载弹层](#隐藏正在加载弹层)
+- [关闭当前页面](#关闭当前页面)
 - [如果请求失败，返回格式](#如果请求失败，返回格式)
 
-# **返回按钮**
+
+
+
+# App传值
+所有进入weex页面都必须传下面参数
+
+```
+<!--html-->
+<template>
+    <div @click="call" class="phone"></div>
+</template>
+
+<!--js-->
+<script>
+    export default {
+        created (){
+            //App传的值从weex.config中获取
+
+            {
+                "status":"1" , //1表示已登录，0表示未登录
+                "userId":"292972" ,//用户uid，status=0时，用户uid为0
+                "auth":"&&&" //客户端登陆成功后，服务端返回的auth值，未登录传“”
+                "deviceId":""//设备mac地址，数据统计用
+            }
+
+            //如果userId为0时 代表用户未登录 如果调取登录弹层，监听用户登录成功时，需要主动去更新用户的userId
+
+            例:获取deviceId
+            weex.config.deviceId
+
+            注意：IOS中只有入口页才可以获取到 需要存储在storage中
+                 安卓每个页面都可以直接获取到
+        }
+    }
+</script>
+```
+
+# 返回按钮
 
     文档位置：https://weex-project.io/cn/references/advanced/extend-to-android.html
 
@@ -43,18 +84,14 @@
 </template>
 
 <script>
+let globalEvent = weex.requireModule('globalEvent');
+
   export default {
-    methods:{
-      back:function(){
-        //  判断是否为路由跳转
-        if (this.$route && this.$route.params.id) {
-          this.$router.push('/')
-          return ;
-        }
-        //   native操作
-        weex.requireModule('thaw').onGoBack("1");
-        return ;
-      }
+    created(){
+      //监听用户点击安卓物理返回键
+      globalEvent && globalEvent.addEventListener("onRespondNativeBack", e => {
+        this.goBack() //返回上一个的方法
+      })
     }
   }
 </script>
@@ -91,7 +128,7 @@
 
 
 # 拨打电话
-拨打电话和第一个点击返回按钮是一样的意思，这次用的是onGoCall方法，将电话号码传给调取电话功能。
+接受一个字符串参数，为电话号码
 
 
 ```
@@ -114,8 +151,7 @@
 
 ```
 # 拍照或从手机相册中选图接口
-点击按钮弹出询问用户调取摄像头还是图库，传递"album",代表只调取图库，如果传递 "camera"，代表只调取摄像头，默认两者都有。返回图片的预览地址
-返回JSON：{state:"success":data:'预览地址'}
+点击按钮弹出选取图片或者拍照功能
 
 ```
 <!--html-->
@@ -128,14 +164,19 @@
     export default {
         call (){
             //   native操作
-            weex.requireModule('THAW').chooseImage();
+            weex.requireModule('THAW').chooseImage({
+               "type":"1",  //1表示图片，0表示拍照和图片。2表示拍照
+               "bucket":"" , //图片上传到七牛的桶名，比如bbsimage
+               "imgPath":"",  // 图片上传文件路径 比如 imga/nr/t/
+               "hostUrl":"", //图片上传域名 比如 https://img9.kcimg.cn/
+            });
         }
     }
 </script>
 ```
 
 # 监听上传图片回调
-用户上传图片的时候监听是否上传成功，返回JSON：{imageUpload:'图片预览地址'}
+用户上传图片的时候监听是否上传成功，返回JSON：{'imageUpload':"图片地址",'preview':'图片预览的base64'}
 
 ```
 <!--html-->
@@ -150,7 +191,8 @@ let globalEvent = weex.requireModule('globalEvent');
         call (){
             //   native操作
             globalEvent.addEventListener('chooseImageCallBack',function(res){
-
+                console.log(res.imageUpload) // 图片上传的路径
+                console.log(res.preview)     // 图片预览的base64
             });
         }
     }
@@ -180,6 +222,34 @@ let globalEvent = weex.requireModule('globalEvent');
 </script>
 ```
 
+# 监听定位成功或者失败
+监听是否定位成功 并且
+
+
+```
+<!--html-->
+<template>
+    <div @click="call" class="phone"></div>
+</template>
+
+<!--js-->
+<script>
+let globalEvent = weex.requireModule('globalEvent')
+    export default {
+        created (){
+            //   native操作
+            globalEvent.addEvenetListener('onGoLoginCallBack',function(data){
+                data = {
+                    "state": "success", //成功是success，失败是error
+                    "longitude": "", // 经度
+                    "latitude": "", //纬度
+                }
+            })
+        }
+    }
+</script>
+```
+
 
 # 根据经纬度显示地图
 发送经纬度调取地图，标注位置点始终在所发送的经纬度，如果有第三个参数，第三个参数为"auto",那么标注位置始终为地图的中心点，并返回地图中心点的经纬度和地址名称
@@ -196,27 +266,11 @@ let globalEvent = weex.requireModule('globalEvent');
     export default {
         call (){
             //   native操作
-            weex.requireModule('THAW').onShowMap({latitude : ' ',longitude : ' ',type:'auto'});
-        }
-    }
-</script>
-```
-
-# 判断是否登陆
-判断用户是否登陆，登陆返回用户的id，未登录返回为0，返回JSON：{state:'success',data:'0'}
-
-```
-<!--html-->
-<template>
-    <div @click="call" class="phone"></div>
-</template>
-
-<!--js-->
-<script>
-    export default {
-        call (){
-            //   native操作
-            weex.requireModule('THAW').onIsLogin();
+            weex.requireModule('THAW').onShowMap({
+                "type": "auto", // auto为标注物在地图中保持不动
+                "longitude": "", // 经度
+                "latitude": "", //纬度
+            });
         }
     }
 </script>
@@ -243,7 +297,7 @@ let globalEvent = weex.requireModule('globalEvent');
 ```
 
 # url跳转
-url跳转，需要传一个参数，参数为需要跳转的url地址
+打开普通web页面
 
 ```
 <!--html-->
@@ -254,9 +308,12 @@ url跳转，需要传一个参数，参数为需要跳转的url地址
 <!--js-->
 <script>
     export default {
-        call (){
+        created (){
             //   native操作
-            weex.requireModule('THAW').goUrl('需要跳转的url地址');
+            // 带标题跳转
+            weex.requireModule('THAW').onOpenNewWeexPage({url:'需要跳转的url地址',title:'跳转的标题'})
+            // 直接跳转
+            weex.requireModule('THAW').goUrl(url:'需要跳转的url地址');
         }
     }
 </script>
@@ -280,7 +337,7 @@ url跳转，需要传一个参数，参数为需要跳转的url地址
 ```
 
 # 登陆回调
-点击去登陆的时候监听用户登陆是否成功，如果成功返回用户的userId 返回JSON：{userId:''}
+点击去登陆的时候监听用户登陆是否成功，如果成功返回用户的userId
 
 ```
 <!--html-->
@@ -295,7 +352,11 @@ let globalEvent = weex.requireModule('globalEvent');
         call (){
             //   native操作
             globalEvent.addEvenetListener('onGoLoginCallBack',function(data){
-                
+                data = {
+                    "status":"1" ,     //1表示成功，0表示失败
+                    "userId":"292972" ,//用户uid，status=0时，用户uid为0
+                    "auth":"&&&"       //客户端登陆成功后，服务端返回的auth值
+                }
             })
         }
     }
@@ -303,7 +364,7 @@ let globalEvent = weex.requireModule('globalEvent');
 ```
 
 # 地理位置提交
-点击按钮返回用户选择的经纬度和街道名称 返回JSON：{longitude:'',latitude:'',address:''}
+点击按钮返回用户选择的经纬度和街道名称
 
 ```
 <!--html-->
@@ -318,7 +379,11 @@ let globalEvent = weex.requireModule('globalEvent');
         call (){
             //   native操作
             globalEvent.addEventListener('onLocationCommit',function(res){
-
+                res = {
+                    "address": "北京市天安门",
+                    "longitude": "", // 经度
+                    "latitude": "", //纬度
+                }
             });
         }
     }
@@ -338,7 +403,7 @@ let globalEvent = weex.requireModule('globalEvent');
     export default {
         call (){
             //   native操作
-            weex.requireModule('THAW').onMenuShare({
+            weex.requireModule('THAW').onShowShare({
                 title: "", // 分享标题
                 desc: "", // 分享描述
                 link: "", // 分享链接
@@ -349,8 +414,59 @@ let globalEvent = weex.requireModule('globalEvent');
 </script>
 ```
 
+# 分享状态回调
+
+```
+<!--html-->
+<template>
+    <div @click="call" class="phone"></div>
+</template>
+
+<!--js-->
+<script>
+let globalEvent = weex.requireModule('globalEvent');
+    export default {
+        created (){
+             //监听分享成功 || 失败
+            globalEvent && globalEvent.addEventListener("onShowShareCallBack", data => {
+                参数：
+                {
+                    "platform": "0",// 0-微信，1-朋友圈，2-QQ，3-qq空间，4-新浪
+                    "status": "0", // 0成功，1失败 ，2取消
+                }
+            })
+        }
+    }
+</script>
+```
+
+# 分享到具体平台
+
+```
+<!--html-->
+<template>
+    <div @click="call" class="phone"></div>
+</template>
+
+<!--js-->
+<script>
+    export default {
+        call (){
+            //   native操作
+            weex.requireModule('THAW').onShowSharePlatfrom({
+                "platform": "0", // 分享到那个平台，0-微信，1-朋友圈，2-QQ，3-qq空间，4-新浪
+                "title": "", // 分享标题
+                "desc": "", // 分享描述
+                "link": "", // 分享链接
+                "imgUrl": "" // 分享图标
+            });
+        }
+    }
+</script>
+```
+
 # 显示正在加载弹层
-    接受一个string参数，正在加载的文案显示为所传的参数
+    弹出客户端正在加载弹层
 ```
 <!--html-->
 <template>
@@ -363,7 +479,7 @@ let globalEvent = weex.requireModule('globalEvent');
      export default {
         call (){
             //   native操作
-            thaw.onShowLoading('正在加载中...');
+            thaw.onShowLoading();
         }
     }
 </script>
@@ -389,8 +505,8 @@ let globalEvent = weex.requireModule('globalEvent');
 </script>
 ```
 
-# 响应客户端返回按键
-    直接返回到app页面
+# 关闭当前页面
+  关闭当前页面(Weex中可直接使用navigator.pop())
 ```
 <!--html-->
 <template>
