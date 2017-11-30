@@ -8,21 +8,17 @@
 ---
 
 - [App传值](#App传值)
-- [返回按钮](#返回按钮)
+- [去登陆](#去登陆)
+- [客户端响应物理返回键](#返回按钮)
 - [主动获取客户端信息](#主动获取客户端信息)
 - [拨打电话](#拨打电话)
 - [拍照或从手机相册中选图接口](#拍照或从手机相册中选图接口)
-- [监听上传图片回调](#监听上传图片回调)
 - [获取经纬度](#获取经纬度)
-- [监听定位成功或者失败](#监听定位成功或者失败)
 - [根据经纬度显示地图](#根据经纬度显示地图)
-- [去登陆](#去登陆)
 - [url跳转](#url跳转)
 - [webView标题](#webView标题)
-- [登陆回调](#登陆回调)
 - [地理位置提交](#地理位置提交)
 - [分享](#分享)
-- [分享状态回调](#分享状态回调)
 - [分享到具体平台](#分享到具体平台)
 - [显示正在加载弹层](#显示正在加载弹层)
 - [隐藏正在加载弹层](#隐藏正在加载弹层)
@@ -66,11 +62,7 @@
 </script>
 ```
 
-# 返回按钮
-
-    文档位置：https://weex-project.io/cn/references/advanced/extend-to-android.html
-
-
+# 客户端响应物理返回键
 
 ```
 <!-- weex -->
@@ -105,15 +97,13 @@ let globalEvent = weex.requireModule('globalEvent');
  在客户端打开页面的时候主动向native端传值1，module回调，通过onGetData方法通知，将得到的 信息进行操作
 
 
-
-
 ```
 <script>
     export default {
         created () {
             var me = this;
             var thaw = weex.requireModule('thaw');
-            thaw.onGetData('1',function(ret) {  
+            thaw.onGetData('1',function(ret) {
                 me.userid = ret.userid;
                 me.userName = ret.userName;
                 //执行操作
@@ -151,7 +141,7 @@ let globalEvent = weex.requireModule('globalEvent');
 
 ```
 # 拍照或从手机相册中选图接口
-点击按钮弹出选取图片或者拍照功能
+点击按钮弹出选取图片或者拍照功能 传递两个参数
 
 ```
 <!--html-->
@@ -169,40 +159,23 @@ let globalEvent = weex.requireModule('globalEvent');
                "bucket":"" , //图片上传到七牛的桶名，比如bbsimage
                "imgPath":"",  // 图片上传文件路径 比如 imga/nr/t/
                "hostUrl":"", //图片上传域名 比如 https://img9.kcimg.cn/
-            });
+            },this.callBack.bind(this));
+        },
+        methods:{
+            callBack(data){
+                //返回数据
+                {
+                    'imageUpload':"图片地址",
+                    'preview':'图片预览的base64'
+                }
+            }
         }
     }
 </script>
 ```
-
-# 监听上传图片回调
-用户上传图片的时候监听是否上传成功，返回JSON：{'imageUpload':"图片地址",'preview':'图片预览的base64'}
-
-```
-<!--html-->
-<template>
-    <div @click="call" class="phone"></div>
-</template>
-
-<!--js-->
-let globalEvent = weex.requireModule('globalEvent');
-<script>
-    export default {
-        call (){
-            //   native操作
-            globalEvent.addEventListener('chooseImageCallBack',function(res){
-                console.log(res.imageUpload) // 图片上传的路径
-                console.log(res.preview)     // 图片预览的base64
-            });
-        }
-    }
-</script>
-```
-
 
 # 获取经纬度
 获取用户当前设备所在位置的经纬度。
-返回JSON：{state:"success":data{latitude:'',longitude:''}}
 
 
 ```
@@ -213,38 +186,20 @@ let globalEvent = weex.requireModule('globalEvent');
 
 <!--js-->
 <script>
-    export default {
-        call (){
-            //   native操作
-            weex.requireModule('THAW').getLocation();
-        }
-    }
-</script>
-```
-
-# 监听定位成功或者失败
-监听是否定位成功 并且
-
-
-```
-<!--html-->
-<template>
-    <div @click="call" class="phone"></div>
-</template>
-
-<!--js-->
-<script>
-let globalEvent = weex.requireModule('globalEvent')
     export default {
         created (){
             //   native操作
-            globalEvent.addEvenetListener('onGoLoginCallBack',function(data){
-                data = {
+            weex.requireModule('THAW').getLocation(this.callBack.bind(this));
+        },
+        methods:{
+            callBack(data){
+                //返回数据
+                {
                     "state": "success", //成功是success，失败是error
                     "longitude": "", // 经度
                     "latitude": "", //纬度
                 }
-            })
+            }
         }
     }
 </script>
@@ -264,13 +219,23 @@ let globalEvent = weex.requireModule('globalEvent')
 <!--js-->
 <script>
     export default {
-        call (){
+        created (){
             //   native操作
             weex.requireModule('THAW').onShowMap({
                 "type": "auto", // auto为标注物在地图中保持不动
                 "longitude": "", // 经度
                 "latitude": "", //纬度
-            });
+            },this.callBack.bind(this));
+        },
+        methods:{
+            callback(){
+                //返回数据
+                {
+                    "state": "success", //成功是success，失败是error
+                    "longitude": "", // 经度
+                    "latitude": "", //纬度
+                }
+            }
         }
     }
 </script>
@@ -278,6 +243,7 @@ let globalEvent = weex.requireModule('globalEvent')
 
 # 去登陆
 调起登陆弹层
+    传递一个callbak，登录成功时，在callback里面操作后续方法
 
 ```
 <!--html-->
@@ -288,9 +254,19 @@ let globalEvent = weex.requireModule('globalEvent')
 <!--js-->
 <script>
     export default {
-        call (){
+        created (){
             //   native操作
-            weex.requireModule('THAW').onGoLogin();
+            weex.requireModule('THAW').onGoLogin(this.callBack.bind(this));
+        },
+        methods(data){
+            callback(){
+                //返回数据
+                {
+                    "status":"1" ,     //1表示成功，0表示失败
+                    "userId":"292972" ,//用户uid，status=0时，用户uid为0
+                    "auth":"&&&"       //客户端登陆成功后，服务端返回的auth值
+                }
+            }
         }
     }
 </script>
@@ -336,33 +312,6 @@ let globalEvent = weex.requireModule('globalEvent')
 </script>
 ```
 
-# 登陆回调
-点击去登陆的时候监听用户登陆是否成功，如果成功返回用户的userId
-
-```
-<!--html-->
-<template>
-    <div @click="call" class="phone"></div>
-</template>
-
-<!--js-->
-let globalEvent = weex.requireModule('globalEvent');
-<script>
-    export default {
-        call (){
-            //   native操作
-            globalEvent.addEvenetListener('onGoLoginCallBack',function(data){
-                data = {
-                    "status":"1" ,     //1表示成功，0表示失败
-                    "userId":"292972" ,//用户uid，status=0时，用户uid为0
-                    "auth":"&&&"       //客户端登陆成功后，服务端返回的auth值
-                }
-            })
-        }
-    }
-</script>
-```
-
 # 地理位置提交
 点击按钮返回用户选择的经纬度和街道名称
 
@@ -376,15 +325,19 @@ let globalEvent = weex.requireModule('globalEvent');
 let globalEvent = weex.requireModule('globalEvent');
 <script>
     export default {
-        call (){
+        created (){
             //   native操作
-            globalEvent.addEventListener('onLocationCommit',function(res){
-                res = {
+            weex.requireModule('THAW').onLocationCommit(this.callBack.bind(this))
+        },
+        methods:{
+            callback(){
+                // 返回参数
+                {
                     "address": "北京市天安门",
                     "longitude": "", // 经度
                     "latitude": "", //纬度
                 }
-            });
+            }
         }
     }
 </script>
@@ -401,40 +354,23 @@ let globalEvent = weex.requireModule('globalEvent');
 <!--js-->
 <script>
     export default {
-        call (){
+        created (){
             //   native操作
             weex.requireModule('THAW').onShowShare({
                 title: "", // 分享标题
                 desc: "", // 分享描述
                 link: "", // 分享链接
                 imgUrl: "" // 分享图标
-            });
-        }
-    }
-</script>
-```
-
-# 分享状态回调
-
-```
-<!--html-->
-<template>
-    <div @click="call" class="phone"></div>
-</template>
-
-<!--js-->
-<script>
-let globalEvent = weex.requireModule('globalEvent');
-    export default {
-        created (){
-             //监听分享成功 || 失败
-            globalEvent && globalEvent.addEventListener("onShowShareCallBack", data => {
-                参数：
+            },this.callBack.bind(this));
+        },
+        methods:{
+            callback(){
+                //返回数据
                 {
                     "platform": "0",// 0-微信，1-朋友圈，2-QQ，3-qq空间，4-新浪
                     "status": "0", // 0成功，1失败 ，2取消
                 }
-            })
+            }
         }
     }
 </script>
@@ -451,7 +387,7 @@ let globalEvent = weex.requireModule('globalEvent');
 <!--js-->
 <script>
     export default {
-        call (){
+        created (){
             //   native操作
             weex.requireModule('THAW').onShowSharePlatfrom({
                 "platform": "0", // 分享到那个平台，0-微信，1-朋友圈，2-QQ，3-qq空间，4-新浪
@@ -459,7 +395,16 @@ let globalEvent = weex.requireModule('globalEvent');
                 "desc": "", // 分享描述
                 "link": "", // 分享链接
                 "imgUrl": "" // 分享图标
-            });
+            },this.callBack.bind(this));
+        },
+        methods:{
+            callback(){
+                //返回数据
+                {
+                    "platform": "0",// 0-微信，1-朋友圈，2-QQ，3-qq空间，4-新浪
+                    "status": "0", // 0成功，1失败 ，2取消
+                }
+            }
         }
     }
 </script>
