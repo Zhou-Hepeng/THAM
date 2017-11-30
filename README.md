@@ -154,9 +154,9 @@ let globalEvent = weex.requireModule('globalEvent');
     export default {
         call (){
             //   native操作
-            weex.requireModule('THAW').chooseImage({
+            weex.requireModule('THAW').onSelectImage({
                "type":"1",  //1表示图片，0表示拍照和图片。2表示拍照
-               "bucket":"" , //图片上传到七牛的桶名，比如bbsimage
+               "toKen":"" , //获取私密空间图片上传token
                "imgPath":"",  // 图片上传文件路径 比如 imga/nr/t/
                "hostUrl":"", //图片上传域名 比如 https://img9.kcimg.cn/
             },this.callBack.bind(this));
